@@ -2,13 +2,23 @@
 
 with pkgs;
 
-pkgs.mkShell {
-  buildInputs = [
-    (texlive.combine {
+let
+    texEnv = (texlive.combine {
       inherit (texlive)
         collection-latex
         pgf
         tikz-cd
+        forest
+        #undeclared forest deps:
+        pgfopts
+        etoolbox
+        environ
+        #undeclared environ deps:
+        trimspaces
+        #
+        l3packages #xparse
+        inlinedef
+        #
         beamer
         csquotes
         babel
@@ -19,17 +29,14 @@ pkgs.mkShell {
         amsmath
         cm-mf-extra-bold
         metafont
-      ;
-    })
-    
-    haskellPackages.lhs2tex
-
-    ghc
-    # (pkgs.ghcWithPackages (
-    #   hpkgs: with hpkgs; [
-        
-    # ]))
-    gnumake
-    
+        ;
+  });
+in
+pkgs.mkShell {
+  buildInputs = [
+      texEnv
+      haskellPackages.lhs2tex
+      ghc
+      gnumake
   ];
 }
