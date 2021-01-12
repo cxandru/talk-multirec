@@ -12,16 +12,18 @@ import Data.Bool ( bool )
 \begin{frame}
 \begin{code}
 length :: [a] -> Int
-length [] = 0
-length (x:xs) = 1 + length xs
+length = \case
+{-"\alert<2->{"-}[]{-"}"-} -> 0
+{-"\alert<2->{"-}(x:xs){-"}"-} -> 1 + {-"\alert<2->{"-}length xs{-"}"-}
 \end{code}
  % still unsure if `go` makes this more or less understandable here
 \begin{code}
 filter :: (a -> Bool) -> [a] -> [a]
 filter p = go where
-  go [] = []
-  go (x:xs) = if p x then [x] else [] ++ go xs
+  {-"\alert<2->{"-}go []{-"}"-} = []
+  {-"\alert<2->{"-}go (x:xs){-"}"-} = if p x then [x] else [] ++ {-"\alert<2->{"-}go xs{-"}"-}
 \end{code}
+\onslide<3->
 \begin{itemize}
 \item List Design pattern?
 \item Design Patterns are a poor man's abstraction
@@ -190,22 +192,44 @@ data List a where
   Nil :: List a
   Cons :: a -> (List a) -> (List a)
 data BooL where
-  TT :: BooL
   FF :: BooL
+  TT :: BooL
 \end{code}}
 \only<3->{
 \begin{code}
 list :: b -> (a -> b -> b) -> List a -> b
-list nil cons = fold where
-  fold Nil = nil
-  fold (x `Cons` xs) = x `cons` fold xs
+list {-"\alert<4->{"-}nil cons{-"}"-} = fold where
+  {-"\alert<4->{"-}fold Nil{-"}"-} = nil
+  {-"\alert<4->{"-}fold (x `Cons` xs){-"}"-} = x `cons` {-"\alert<4->{"-}fold xs{-"}"-}
 
-bool' :: b -> b -> BooL -> b
-bool' tt ff = fold where
-  fold TT = tt
+booL :: b -> b -> BooL -> b
+booL tt ff = fold where
   fold FF = ff
+  fold TT = tt
 \end{code}
 }
+\end{frame}
+\begin{frame}
+  \frametitle{Structural Functors}
+\begin{code}
+data ListF c x = NilF | ConsF c x --deriving Functor
+data BooLF x = TTF | FFF deriving Functor
+
+instance Functor (ListF c) where
+  fmap :: (a -> b) -> (((ListF c) a) -> ((ListF c) b))
+  fmap f = \case
+    NilF -> NilF
+    ConsF c a -> ConsF c {-"\alert<2->{"-}(f a){-"}"-}
+\end{code}
+
+If you are unfamiliar with functors: In our case regarding them as a computational context with holes suffices.
+\end{frame}
+\begin{frame}
+  \begin{itemize}
+  \item The structural functors encode where the recursion should happen
+  \item Relation to original datatype not yet wholly clear
+  \item \(\leadsto\) Introduce a little Category Theory
+  \end{itemize}
 \end{frame}
 \begin{frame}{Algebras}
 \(F:\mathcal{C}\to\mathcal{C}, A,B,A_0\in \mathcal{C}_0\)\\
