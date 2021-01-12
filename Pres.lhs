@@ -3,6 +3,7 @@
 \usecolortheme{whale}
 \usepackage[english]{babel}
 \usepackage{csquotes}
+\usepackage{amsmath}
 %\usepackage{biblatex}[backend=biber]
 %\addbibresource{mybib.bib}
 %\usepackage{fancyvrb}
@@ -18,7 +19,7 @@
 %include talk.fmt
 %include lhs2TeX.sty
 
-\title[Indexed Recursive Traversals]{Structured Traversals for (Multiply) Recursive Algebraic Datatypes}
+\title[Structured Traversals for (M(R))ADTs]{Structured Traversals for ((Multiply) Recursive) Algebraic Datatypes}
 \author{G. Cassian Alexandru}
 \date{\today}
 \begin{document}

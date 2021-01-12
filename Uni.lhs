@@ -3,11 +3,22 @@
 %if False
 \begin{code}
 {-# LANGUAGE GADTSyntax #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE KindSignatures #-}
+
 module Uni where
 import Prelude hiding ( length )
 import Data.Bool ( bool )
+import Data.Kind (Type)
 \end{code}
 %endif
+
+% for \eval{..}
+%options ghci -XGADTSyntax -XDeriveFunctor -XInstanceSigs -XTypeApplications -XLambdaCase
 
 \begin{frame}
 \begin{code}
@@ -231,8 +242,69 @@ If you are unfamiliar with functors: In our case regarding them as a computation
   \item \(\leadsto\) Introduce a little Category Theory
   \end{itemize}
 \end{frame}
+
+\section{Category Theory}
+
+\begin{frame}
+  \frametitle{Endofunctors}
+  Let \(\mathcal{C}\) be a Category. An \emph{Endofunctor} is a pair of maps, on the objects and morphisms of the category respectively:
+  \(F_0:\mathcal{C}_0\to \mathcal{C}_0\), \(F_1:\mathcal{C}_1\to \mathcal{C}_1\)
+  Such that:
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+      \item \(F_1(h:A\to B) : F_0A\to F_0B\)
+      \item \(F_1(id_A) = id_{F_0A}\)
+      \item \(F_1(h\circ g)=(F_1h)\circ (F_1g)\)
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+      \item |fmap @f (h :: a -> b) ::| |f a -> f b|
+      \item |fmap @f (id @a)| = |id @(f a)|
+      \item |fmap @f (h . g)| = |fmap @f h . fmap @f g|
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vspace{2ex}
+  The category we are regarding is \textsl{Hask}, where objects are Haskell types, and morphisms are functions between them.
+  This is usually interpreted as a \emph{CPO} (complete partial order). We will mention what notions are specic to \emph{CPO}s.
+\end{frame}
 \begin{frame}{Algebras}
-\(F:\mathcal{C}\to\mathcal{C}, A,B,A_0\in \mathcal{C}_0\)\\
+  Let \(F:\mathcal{C}\to\mathcal{C}\) be an endofunctor \(A_0\in \mathcal{C}_0\), \(\phi: A\to FA\). Then \(A \xrightarrow{\phi} FA\) is an \emph{Algebra}, and \(A\) its \emph{Carrier}.
+  We can phrase the business logic of the previously seen functions as such (using the transformation \(A^B\times A^C\sim A^{B+C}\)):
+\begin{code}
+type Algebra f a = f a -> a
+boolBL :: b -> b -> Algebra BooLF b
+boolBL tt ff = \case
+  TTF -> tt
+  FFF -> ff
+listBL :: b -> (a -> b -> b) -> Algebra (ListF a) b
+listBL nil cons = \case
+  NilF -> nil
+  x `ConsF` b -> x `cons` b
+\end{code}
+\end{frame}
+\begin{frame}
+  To conclude this exercise, we want to generalize the function for recursively applying the business logic (So a function subsuming |list| and |booL| seen earlier):
+  \eval{:t list} \eval{:t booL}
+We define a type family to associate the structural functors with their types.
+\begin{code}
+type family CI (f :: * -> *) :: *
+
+type instance CI (ListF a) = List a
+type instance CI (BooLF) = BooL
+\end{code}
+Then our that function would have type \eval{:t cata}. To get to its definition, we must interleave some more Cat.Th.
+\end{frame}
+\begin{frame}
+\begin{code}
+cata :: Algebra f b -> (CI f) -> b
+cata = undefined
+\end{code}
+\end{frame}
+
+\begin{frame}
 \vspace{2em}
 \begin{columns}
 \begin{column}{0.2\textwidth}
@@ -268,13 +340,6 @@ Initiality requirement: \(h=\kappa^{-1};Fh;\psi\)
 \frametitle{As Program}
 \begin{code}
 newtype Fix f = In { out :: f (Fix f) }
-\end{code}
-\begin{code}
-type Algebra f c = f c -> c
-\end{code}
-\begin{code}
-cata :: Functor f => Algebra f a -> Fix f -> a
-cata alg = alg . fmap (cata alg) . out
 \end{code}
 \end{frame}
 
