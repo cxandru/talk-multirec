@@ -3,6 +3,8 @@
 \usecolortheme{whale}
 \usepackage[english]{babel}
 \usepackage{csquotes}
+\usepackage[mathletters]{ucs}
+\usepackage[utf8x]{inputenc}
 \usepackage{amsmath}
 %\usepackage{biblatex}[backend=biber]
 %\addbibresource{mybib.bib}

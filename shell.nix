@@ -22,6 +22,7 @@ let
         beamer
         csquotes
         babel
+        ucs
         pdftex
         latexmk
         #dependencies of lhs2TeX
