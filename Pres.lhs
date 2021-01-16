@@ -10,6 +10,7 @@
 \usepackage[mathletters]{ucs}
 \usepackage[utf8x]{inputenc}
 \usepackage{amsmath}
+\usepackage{amssymb}
 %\usepackage{biblatex}[backend=biber]
 %\addbibresource{mybib.bib}
 %\usepackage{fancyvrb}
