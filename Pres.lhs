@@ -1,6 +1,10 @@
 \documentclass{beamer}
-\usetheme{Luebeck}
-\usecolortheme{whale}
+\mode<presentation>{
+  \usetheme{Luebeck}
+  \usecolortheme{whale}
+  \useoutertheme{infolines}
+}
+
 \usepackage[english]{babel}
 \usepackage{csquotes}
 \usepackage[mathletters]{ucs}
