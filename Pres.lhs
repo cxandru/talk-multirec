@@ -47,6 +47,8 @@ mysymbol/.style={start anchor=center,end anchor=center,draw=none}
 %if False
 \begin{code}
 module Pres where
+(.>) :: (a -> b) -> (b -> c) -> a -> c
+(.>) = flip (.)
 \end{code}
 %endif
 
