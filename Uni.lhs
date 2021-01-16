@@ -9,16 +9,19 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
 
 module Uni where
 import Prelude hiding ( length )
 import Data.Bool ( bool )
 import Data.Kind (Type)
+import Pres ((.>))
 \end{code}
 %endif
 
 % for \eval{..}
-%options ghci -XGADTSyntax -XDeriveFunctor -XInstanceSigs -XTypeApplications -XLambdaCase
+%options ghci -XGADTSyntax -XDeriveFunctor -XInstanceSigs -XTypeApplications -XLambdaCase -XScopedTypeVariables
 
 \begin{frame}
 \begin{code}
@@ -299,8 +302,8 @@ Then our that function would have type \eval{:t cata}. To get to its definition,
 \end{frame}
 \begin{frame}
 \begin{code}
-cata :: Algebra f b -> (CI f) -> b
-cata = undefined
+cata :: UnwrapCI f => Algebra f b -> (CI f) -> b
+cata ψ = unwrap .> fmap (cata ψ) .> ψ
 \end{code}
 \end{frame}
 
@@ -317,24 +320,46 @@ Algebra\\
 \begin{column}{0.3\textwidth}
 Algebra-Hom: $(A,\phi)\to (B,\psi)$ \\
 \begin{tikzcd}[ampersand replacement=\&]
-    FA \arrow[d, "\phi"] \arrow[r,"Ff"]
+    FA \Commutes[\circlearrowleft]{rd}\arrow[d, "\phi"] \arrow[r,"Ff"]
       \& FB \arrow[d, "\psi"]\\
     A \arrow[r, "f"]
       \& B
 \end{tikzcd}
 \end{column}
 \begin{column}{0.3\textwidth}
-Initial Algebra: $(A,\kappa)$ \\
+Initial Algebra: $(A,κ)$ \\
 \begin{tikzcd}[ampersand replacement=\&]
-    FA \arrow[d,shift left=.75ex, "\kappa"] \arrow[r, dashed, "Fh"]
+    FA \Commutes[\circlearrowleft]{rd}\arrow[d,shift left=.75ex, "κ"] \arrow[r, dashed, "Fh"]
       \& FB \arrow[d, "\psi"]\\
-    A \arrow[r, dashed, "h"] \arrow[u,shift left=.75ex,"\kappa^{-1}"]
+    A \arrow[r, dashed, "h"] \arrow[u,shift left=.75ex,"κ^{-1}"]
       \& B
 \end{tikzcd}
 \end{column}
 \end{columns}
-\vspace{2em}
-Initiality requirement: \(h=\kappa^{-1};Fh;\psi\)
+{\footnotesize Legend: \tikz[outer xsep=0pt,inner xsep=0pt]{\draw[->,dashed] (0,0) -- (0.4,0);}: \(\exists!\),
+  \begin{tikzcd}[cramped, sep=small, ampersand replacement=\&]
+    {} \arrow[d,left,"f'"'] \arrow[r,"f"]\Commutes[\circlearrowleft]{rd} \& {}\arrow[d,"g"]\\
+    {} \arrow[r,"g'"'] \& {}\\
+  \end{tikzcd} : \(f;g = f';g'\) }\\
+Initiality requirement: \(h=κ^{-1};Fh;\psi\)\\
+\(h\) has exactly the type we want for |cata ψ|, when |CI F| = |A| (CI stands for \enquote{Carrier Initial}).\\
+The initiality requirement gives us a function definition, we just still need \(κ^{-1}\).
+\end{frame}
+\begin{frame}
+\begin{code}
+class Functor f => UnwrapCI f where
+  unwrap :: (CI f) -> f (CI f)
+instance UnwrapCI BooLF where
+  unwrap :: BooL -> BooLF BooL
+  unwrap = \case
+    TT -> TTF
+    FF -> FFF
+instance UnwrapCI (ListF a) where
+  unwrap :: List a -> ListF a (List a)
+  unwrap = \case
+    Nil -> NilF
+    x `Cons` xs -> x `ConsF` xs
+\end{code}
 \end{frame}
 \begin{frame}[fragile]
 \frametitle{As Program}
