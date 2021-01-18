@@ -23,12 +23,16 @@ import Pres ((.>))
 % for \eval{..}
 %options ghci -XGADTSyntax -XDeriveFunctor -XInstanceSigs -XTypeApplications -XLambdaCase -XScopedTypeVariables
 
+\section{Single Recursion}
+
+\subsection{Motivation}
+
 \begin{frame}
 \begin{code}
 length :: [a] -> Int
 length = \case
 {-"\alert<2->{"-}[]{-"}"-} -> 0
-{-"\alert<2->{"-}(x:xs){-"}"-} -> 1 + {-"\alert<2->{"-}length xs{-"}"-}
+{-"\alert<2->{"-}(_:xs){-"}"-} -> 1 + {-"\alert<2->{"-}length xs{-"}"-}
 \end{code}
  % still unsure if `go` makes this more or less understandable here
 \begin{code}
@@ -54,7 +58,7 @@ filter p = go where
 }
 
 \begin{frame}
-  \begin{columns}
+  \begin{columns}[t]
     \begin{column}{0.2\textwidth}
       List\\
       \begin{forest}
@@ -77,21 +81,21 @@ filter p = go where
     \end{column}
     \begin{column}{0.8\textwidth}
       Traversals\\
-      \begin{columns}
+      \begin{columns}[t]
         \begin{column}{0.4\textwidth}
           \texttt{length}
           \begin{forest}
             ADT,
             baseline=(current bounding box.north)
-            [|\_-> (1+)|
+            [|\_ n -> 1+n|
             [1]
-            [|\_-> (1+)|
+            [|\_ n -> 1+n|
             [2]
-            [|\_-> (1+)|
+            [|\_ n -> 1+n|
             [3]
-            [|\_-> (1+)|
+            [|\_ n -> 1+n|
             [4]
-            [0]
+            [~~~0~~~~~]
             ]
             ]
             ]
@@ -121,7 +125,8 @@ filter p = go where
           \fontsize{9.5pt}{9.5pt}
 \begin{code}
 g p x xs =
-  bool [] [x] (p x) ++ xs
+  (if p x then [x] else [])
+  ++ xs
 \end{code}
         \end{column}
       \end{columns}
@@ -133,7 +138,7 @@ g p x xs =
   \frametitle{Example Evaluation of |filter even|}
 \begin{spec}
 g p x xs =
-  bool [] [x] (p x) ++ xs
+  (if p x then [x] else []) ++ xs
 \end{spec}
   \only<1>{\begin{forest}
     ADT,
@@ -192,96 +197,240 @@ g p x xs =
   \end{forest}}
 \end{frame}
 \begin{frame}
+  \frametitle{Insight}
+ Even though the functions were defined recursively, their behaviour can be understood non-recursively as simply replacing the two constructors for |[a]| by functions of the same arity.
+\end{frame}
+\begin{frame}
 \only<1>{
 \begin{spec}
 data List a = Nil | Cons a (List a)
-data BooL = TT | FF
 \end{spec}
 }
-\only<2>{
-  GADT Syntax:}
 \only<2->{
+  GADT Syntax:
 \begin{code}
 data List a where
   Nil :: List a
   Cons :: a -> (List a) -> (List a)
-data BooL where
-  FF :: BooL
-  TT :: BooL
-\end{code}}
-\only<3->{
+\end{code}
+\onslide<3->{
 \begin{code}
 list :: b -> (a -> b -> b) -> List a -> b
 list {-"\alert<4->{"-}nil cons{-"}"-} = fold where
   {-"\alert<4->{"-}fold Nil{-"}"-} = nil
   {-"\alert<4->{"-}fold (x `Cons` xs){-"}"-} = x `cons` {-"\alert<4->{"-}fold xs{-"}"-}
 
-booL :: b -> b -> BooL -> b
-booL tt ff = fold where
-  fold FF = ff
-  fold TT = tt
+length' = list 0 (\_ n -> 1+n)
+filter' p = list []
+  (\x xs -> (if p x then [x] else []) ++ xs)
 \end{code}
+}
 }
 \end{frame}
 \begin{frame}
-  \frametitle{Structural Functors}
+  \frametitle{Now for Expressions}
 \begin{code}
-data ListF c x = NilF | ConsF c x --deriving Functor
-data BooLF x = TTF | FFF deriving Functor
+data Expr where
+  Lit :: Int -> Expr
+  Plus :: Expr -> Expr -> Expr
 
-instance Functor (ListF c) where
-  fmap :: (a -> b) -> (((ListF c) a) -> ((ListF c) b))
-  fmap f = \case
-    NilF -> NilF
-    ConsF c a -> ConsF c {-"\alert<2->{"-}(f a){-"}"-}
+expr :: (Int -> b) -> (b -> b -> b) -> Expr -> b
+expr lit plus = fold where
+  fold (Lit i) = lit i
+  fold (l `Plus` r) = (fold l) `plus` (fold r)
 \end{code}
-
-If you are unfamiliar with functors: In our case regarding them as a computational context with holes suffices.
 \end{frame}
 \begin{frame}
   \begin{itemize}
-  \item The structural functors encode where the recursion should happen
-  \item Relation to original datatype not yet wholly clear
-  \item \(\leadsto\) Introduce a little Category Theory
+  \item We want to define a polytypic \enquote{fold}, subsuming \texttt{list}, \texttt{expr}, which encapsulates the whole \enquote{replace constructors with functions} pattern
+  \item We need a deeper understanding of what the datatypes we are working with \emph{are}
+  \item \(\leadsto\) Introduce a little \sout{Anarchy}Category Theory
   \end{itemize}
 \end{frame}
-
-\section{Category Theory}
+\subsection{Category Theory}
+\begin{frame}
+  \frametitle{Category}
+  A category \(\mathcal{C}\) consists of collections \(\mathcal{C}_0\) of objects and \(\mathcal{C}_1\) of morphisms (or arrows) between them, with the following structure:
+  \begin{itemize}
+  \item For every two arrows \(f: A\to B\), \(g: B\to C\), there is a composite arrow \(f;g:A\to C\)
+  \item For every object \(A:\mathcal{C}_0\) there is an identity morphism \(1_A: A\to A\)
+  \item Such that the following hold:
+    \begin{itemize}
+    \item Composition is associative, that is: \(f;(g;h) = (f;g);h\).
+    \item Composition satisfies unit laws: For every \(f:A\to B.\ id_A;f = f,\ f;id_B=f\).
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+\begin{frame}
+  \frametitle{Isomorphisms}
+  Given a category \(C\) and two objects \(A,B : \mathcal{C}_0\), we say \(A\) and \(B\) are isomorphic via \(f:A\to B\), if there exists a \(g:B\to A\) which is both a left- and right-inverse:
+  \[
+    \begin{array}{ccc}
+      \begin{tikzcd}[column sep=small, ampersand replacement=\&]
+        \& B \arrow[dr, "g"] \& \\
+        A \arrow[ur,"f"] \arrow[rr, "1_A"] \&
+        \& A
+      \end{tikzcd}
+      &
+        \begin{tikzcd}[column sep=small, ampersand replacement=\&]
+          \& A \arrow[dr, "f"] \& \\
+          B \arrow[ur,"g"] \arrow[rr, "1_B"] \&
+          \& B
+        \end{tikzcd}
+      &
+        \begin{tikzcd}[column sep=small, ampersand replacement=\&]
+          A\arrow[loop left, "1_A"] \arrow[rr, bend left, "f"] \& \&
+          B \arrow[ll, bend left, "g"] \arrow[loop right, "1_B"]
+        \end{tikzcd}
+    \end{array}
+  \]
+\end{frame}
 
 \begin{frame}
-  \frametitle{Endofunctors}
-  Let \(\mathcal{C}\) be a Category. An \emph{Endofunctor} is a pair of maps, on the objects and morphisms of the category respectively:
-  \(F_0:\mathcal{C}_0\to \mathcal{C}_0\), \(F_1:\mathcal{C}_1\to \mathcal{C}_1\)
-  Such that:
-  \begin{columns}
-    \begin{column}{0.5\textwidth}
-      \begin{itemize}
-      \item \(F_1(h:A\to B) : F_0A\to F_0B\)
-      \item \(F_1(id_A) = id_{F_0A}\)
-      \item \(F_1(h\circ g)=(F_1h)\circ (F_1g)\)
-      \end{itemize}
-    \end{column}
-    \begin{column}{0.5\textwidth}
-      \begin{itemize}
-      \item |fmap @f (h :: a -> b) ::| |f a -> f b|
-      \item |fmap @f (id @a)| = |id @(f a)|
-      \item |fmap @f (h . g)| = |fmap @f h . fmap @f g|
-      \end{itemize}
-    \end{column}
-  \end{columns}
-  \vspace{2ex}
-  The category we are regarding is \textsl{Hask}, where objects are Haskell types, and morphisms are functions between them.
-  This is usually interpreted as a \emph{CPO} (complete partial order). We will mention what notions are specic to \emph{CPO}s.
+  \frametitle{Functors}
+  Let \(\mathcal{C}, \mathcal{D}\) be Categories. A \emph{Functor} \(F\) is a pair of maps \((F_0,F_1)\), on the objects and morphisms of the category respectively, such that commuting diagrams are preserved, e.g.:
+  \[\begin{array}{ccc}
+      \begin{tikzcd}[column sep=small, ampersand replacement=\&]
+        \& B \arrow[dr, "g"] \& \\
+        A \arrow[ur,"f"] \arrow[rr, "h"] \&
+        \& C
+      \end{tikzcd}
+    &
+      \stackrel{F}{\Rightarrow}
+    &
+    \begin{tikzcd}[column sep=small, ampersand replacement=\&]
+      \& F_0B \arrow[dr, "F_1g"] \& \\
+      F_0A \arrow[ur,"F_1f"] \arrow[rr, "F_1h"] \&
+      \& F_0C
+    \end{tikzcd}
+  \end{array}\]
+In particular, this means identities \& composition are preserved.  \pause
+We will often only write out the definition of a functor on objects.  \pause
+When \(\mathcal{C}=\mathcal{D}\), we say \(F\) is an \emph{Endofunctor}.
 \end{frame}
-\begin{frame}{Algebras}
-  Let \(F:\mathcal{C}\to\mathcal{C}\) be an endofunctor \(A_0\in \mathcal{C}_0\), \(\phi: A\to FA\). Then \(A \xrightarrow{\phi} FA\) is an \emph{Algebra}, and \(A\) its \emph{Carrier}.
+\begin{frame}
+  \frametitle{Building the Functor kit}
+  \begin{itemize}
+  \item Identity (\(IX := X\)) is a functor.
+  \item Constant-to-\(A\) (\(K_AX := A\)), for \(A:C_0\), is a functor.
+  \end{itemize}
+  \vspace{2ex}
+  Categories can have products (\(\times_{\mathcal{C}}\)) and/or coproducts (\(+_{\mathcal{C}}\)). Think of coproducts as indexed unions in our case. Then if \(F,G\) are functors so are:
+  \vspace{1.5ex}
+  \begin{itemize}
+  \item \((F\times G) X := FX \times GX\)
+  \item \((F + G) X := FX + GX\)
+  \end{itemize}
+\end{frame}
+\newcommand{\Alg}[3]{\ensuremath{{#1}{#2}\xrightarrow{{#3}} {#1}}}
+\begin{frame}
+  \frametitle{Algebra}
+  Let \(F:\mathcal{C}\to\mathcal{C}\) be an endofunctor \(A: \mathcal{C}\), \(φ: FA\to A\). Then \(FA \xrightarrow{φ} A\) (or \((A,φ)\)) is an \emph{Algebra}, and \(A\) its \emph{Carrier}.
+\vspace{1ex}
+\begin{columns}
+\begin{column}{0.2\textwidth}
+Algebra\\
+\begin{tikzcd}
+    FA \arrow[d, "φ"]\\
+    A
+\end{tikzcd}\\
+\end{column}
+\begin{column}{0.3\textwidth}
+Algebra-Hom: $(A,φ)\stackrel{f}{\to} (B,\psi)$ \\
+\begin{tikzcd}[ampersand replacement=\&]
+   FA \arrow[d, "φ"] \arrow[r,"Ff"]
+      \& FB \arrow[d, "ψ"] \\
+    A \arrow[r, "f"]
+      \& B
+\end{tikzcd}
+\end{column}
+\begin{column}{0.3\textwidth}
+Initial Algebra: $(A,α)$ s.t. \(∀(B,ψ).\) \\
+\begin{tikzcd}[ampersand replacement=\&]
+    FA \arrow[d, "α"]\arrow[r, dashed, "Fh"]
+      \& FB \arrow[d, "ψ"]\\
+    A \arrow[r, dashed, "h"]
+      \& B
+\end{tikzcd}
+\end{column}
+\end{columns}
+\end{frame}
+
+\newbox\final
+
+\savebox{\final}{
+  \begin{tikzcd}[ampersand replacement=\&]
+    FA \arrow[d, "α"]\arrow[r, dashed, "Fh"]\arrow[rr, bend left, "F1_A"]
+    \& F(FA) \arrow[d, "Fα"] \arrow[r, "Fα"]\& FX\arrow[d,"α"]\\
+    A \arrow[r, dashed, "h"] \arrow[rr, bend right=26, "1_A"']
+    \& FA \arrow[r, "α"]\& X
+  \end{tikzcd}
+}
+% https://tex.stackexchange.com/questions/265884/print-size-of-box-to-latex-output
+% https://tex.stackexchange.com/questions/83672/beamer-vertically-center-picture-inside-overlayarea
+%\typeout{Box wdth:\the\wd\final Box hght: \the\ht\final}
+
+\begin{frame}
+  \frametitle{Lambek's Lemma}
+  If \(F\) has an initial algebra \((A,α)\), then \(A\) is isomorphic to \(FA\) via \(α\).
+  Proof (We show only \(h;α = id_A\)): Consider the algebra \((FA,Fα)\):\\
+  \parbox[t][\the\wd\final][c]{\the\ht\final}{
+    \only<1>{
+      \begin{tikzcd}[ampersand replacement=\&]
+        FA \arrow[d, "α"]\\
+        A
+      \end{tikzcd}
+    }
+    \only<2>{
+      \begin{tikzcd}[ampersand replacement=\&]
+        FA \arrow[d, "α"]\arrow[r, dashed, "Fh"]
+        \& F(FA) \arrow[d, "Fα"]\\
+        A \arrow[r, dashed, "h"]
+        \& FA
+      \end{tikzcd}
+    }
+    \only<3>{
+      \begin{tikzcd}[ampersand replacement=\&]
+        FA \arrow[d, "α"]\arrow[r, dashed, "Fh"]
+        \& F(FA) \arrow[d, "Fα"]\arrow[r, "Fα"]\& FX\arrow[d,"α"]\\
+        A \arrow[r, dashed, "h"]
+        \& FA \arrow[r, "α"]\& X
+      \end{tikzcd}
+    }
+    \only<4>{
+      \begin{tikzcd}[ampersand replacement=\&]
+        FA \arrow[d, "α"]\arrow[r, dashed, "Fh"]\arrow[rr, bend left, "F1_A"]
+        \& F(FA) \arrow[d, "Fα"] \arrow[r, "Fα"]\& FX\arrow[d,"α"]\\
+        A \arrow[r, dashed, "h"] \arrow[rr, bend right=26, "1_A"']
+        \& FA \arrow[r, "α"]\& X
+      \end{tikzcd}
+    }
+  }
+% Wish the below worked *sigh*:
+% \begin{tikzcd}[ampersand replacement=\&]
+%   FA \arrow[d, "α"]\arrow[r, dashed, "Fh"]\onslide<3->{\arrow[rr, bend left, "F1_A"]}
+%   \& F(FA) \arrow[d, "Fα"] \onslide<2->{\arrow[r, "Fα"]\& FX\arrow[d,"α"]}\\
+%   A \arrow[r, dashed, "h"] \onslide<3->{\arrow[rr, bend right, "1_A"]}
+%   \& FA \onslide<2->{\arrow[r, "α"]\& X}
+% \end{tikzcd}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Fixed Point}
+  The carrier \(A\) of the initial algebra \((A,α)\) of a functor \(F\) is a least fixed point of \(F\). Least, that is, in that there is a morphism from it to any other algebra, by initiality.\\
+  \pause
+  \begin{tikzcd}[ampersand replacement=\&]
+    FA \Commutes[\circlearrowleft]{rd}\arrow[d,shift left=.75ex, "α"] \arrow[r, dashed, "Fh"]
+    \& FB \arrow[d, "ψ"]\\
+    A \arrow[r, dashed, "h"] \arrow[u,shift left=.75ex,"α^{-1}"]
+    \& B
+  \end{tikzcd}
+  We get a recursive definition for h: \(h=α^{-1};Fh;ψ\)
+\end{frame}
+\begin{frame}
   We can phrase the business logic of the previously seen functions as such (using the transformation \(A^B\times A^C\sim A^{B+C}\)):
 \begin{code}
 type Algebra f a = f a -> a
-boolBL :: b -> b -> Algebra BooLF b
-boolBL tt ff = \case
-  TTF -> tt
-  FFF -> ff
 listBL :: b -> (a -> b -> b) -> Algebra (ListF a) b
 listBL nil cons = \case
   NilF -> nil
@@ -289,82 +438,25 @@ listBL nil cons = \case
 \end{code}
 \end{frame}
 \begin{frame}
-  To conclude this exercise, we want to generalize the function for recursively applying the business logic (So a function subsuming |list| and |booL| seen earlier):
-  \eval{:t list} \eval{:t booL}
-We define a type family to associate the structural functors with their types.
 \begin{code}
-type family CI (f :: * -> *) :: *
-
-type instance CI (ListF a) = List a
-type instance CI (BooLF) = BooL
+cata :: Functor f => Algebra f b -> (Fix f) -> b
+cata ψ = unFix .> fmap (cata ψ) .> ψ
 \end{code}
-Then our that function would have type \eval{:t cata}. To get to its definition, we must interleave some more Cat.Th.
 \end{frame}
 \begin{frame}
+  \frametitle{Structural Functors}
 \begin{code}
-cata :: UnwrapCI f => Algebra f b -> (CI f) -> b
-cata ψ = unwrap .> fmap (cata ψ) .> ψ
+data ListF c x = NilF | ConsF c x deriving Functor
 \end{code}
 \end{frame}
 
 \begin{frame}
-\vspace{2em}
-\begin{columns}
-\begin{column}{0.2\textwidth}
-Algebra\\
-\begin{tikzcd}
-    FA \arrow[d, "\phi"]\\
-    A
-\end{tikzcd}\\
-\end{column}
-\begin{column}{0.3\textwidth}
-Algebra-Hom: $(A,\phi)\to (B,\psi)$ \\
-\begin{tikzcd}[ampersand replacement=\&]
-    FA \Commutes[\circlearrowleft]{rd}\arrow[d, "\phi"] \arrow[r,"Ff"]
-      \& FB \arrow[d, "\psi"]\\
-    A \arrow[r, "f"]
-      \& B
-\end{tikzcd}
-\end{column}
-\begin{column}{0.3\textwidth}
-Initial Algebra: $(A,κ)$ \\
-\begin{tikzcd}[ampersand replacement=\&]
-    FA \Commutes[\circlearrowleft]{rd}\arrow[d,shift left=.75ex, "κ"] \arrow[r, dashed, "Fh"]
-      \& FB \arrow[d, "\psi"]\\
-    A \arrow[r, dashed, "h"] \arrow[u,shift left=.75ex,"κ^{-1}"]
-      \& B
-\end{tikzcd}
-\end{column}
-\end{columns}
-{\footnotesize Legend: \tikz[outer xsep=0pt,inner xsep=0pt]{\draw[->,dashed] (0,0) -- (0.4,0);}: \(\exists!\),
-  \begin{tikzcd}[cramped, sep=small, ampersand replacement=\&]
-    {} \arrow[d,left,"f'"'] \arrow[r,"f"]\Commutes[\circlearrowleft]{rd} \& {}\arrow[d,"g"]\\
-    {} \arrow[r,"g'"'] \& {}\\
-  \end{tikzcd} : \(f;g = f';g'\) }\\
-Initiality requirement: \(h=κ^{-1};Fh;\psi\)\\
-\(h\) has exactly the type we want for |cata ψ|, when |CI F| = |A| (CI stands for \enquote{Carrier Initial}).\\
-The initiality requirement gives us a function definition, we just still need \(κ^{-1}\).
-\end{frame}
-\begin{frame}
-\begin{code}
-class Functor f => UnwrapCI f where
-  unwrap :: (CI f) -> f (CI f)
-instance UnwrapCI BooLF where
-  unwrap :: BooL -> BooLF BooL
-  unwrap = \case
-    TT -> TTF
-    FF -> FFF
-instance UnwrapCI (ListF a) where
-  unwrap :: List a -> ListF a (List a)
-  unwrap = \case
-    Nil -> NilF
-    x `Cons` xs -> x `ConsF` xs
-\end{code}
-\end{frame}
-\begin{frame}[fragile]
 \frametitle{As Program}
 \begin{code}
-newtype Fix f = In { out :: f (Fix f) }
+newtype Fix (f :: * -> *) :: * where
+  In :: f (Fix f) -> Fix f
+unFix :: Fix f -> f (Fix f)
+unFix (In f) = f
 \end{code}
 \end{frame}
 

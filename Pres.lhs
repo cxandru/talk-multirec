@@ -2,6 +2,7 @@
 \mode<presentation>{
   \usetheme{Luebeck}
   \usecolortheme{whale}
+  \setbeamertemplate{navigation symbols}{}
   \useoutertheme{infolines}
 }
 
@@ -11,12 +12,14 @@
 \usepackage[utf8x]{inputenc}
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{latexsym}
 %\usepackage{biblatex}[backend=biber]
 %\addbibresource{mybib.bib}
 %\usepackage{fancyvrb}
 \usepackage{forest}
 \usepackage{tikz}
 \usetikzlibrary{cd}
+\usepackage[normalem]{ulem} %strikethrough
 
 % Inspirations:
 % https://onthebalcony.wordpress.com/2008/05/16/haskell-lhs2tex-latex-beamer/
@@ -26,7 +29,7 @@
 %include talk.fmt
 %include lhs2TeX.sty
 
-\title[Structured Traversals for (M(R))ADTs]{Structured Traversals for ((Multiply) Recursive) Algebraic Datatypes}
+\title[Structured Traversals for (M)RADTs]{Structured Traversals for (Multiply) Recursive Algebraic Datatypes}
 \author{G. Cassian Alexandru}
 \date{\today}
 \begin{document}
@@ -56,6 +59,29 @@ module Pres where
 \begin{frame}
   \titlepage
   {\scriptsize \hspace{1cm}Presentation generated from \texttt{.lhs} sources using \texttt{lhs2TeX}}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Context \& Conventions}
+  \begin{itemize}
+  \item Language: Haskell, with numerous language extensions
+  \item Syntactic (e.g. \texttt{LambdaCase})
+  \item Clarifying (e.g. \texttt{TypeApplications, InstanceSigs})
+  \item Limited Dependent programming (e.g. \texttt{DataKinds}), for multiple recursion
+  \end{itemize}
+  \pause
+\begin{spec}
+{-# LANGUAGE LambdaCase #-}
+foo :: [a] -> b
+foo = \case
+  [] -> …
+  (x:xs) -> …
+\end{spec}
+\pause
+\begin{itemize}
+\item Composition in diagrammatic order: \(f;g\) reads \enquote{\(f\), then \(g\)}
+\item Haskell: |f .> g|
+\end{itemize}
 \end{frame}
 
 \include{Uni}

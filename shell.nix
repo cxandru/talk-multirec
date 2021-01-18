@@ -5,33 +5,35 @@ with pkgs;
 let
     texEnv = (texlive.combine {
       inherit (texlive)
-        collection-latex
-        pgf
-        tikz-cd
-        forest
-        #undeclared forest deps:
-        pgfopts
-        etoolbox
-        environ
-        #undeclared environ deps:
-        trimspaces
-        #
-        l3packages #xparse
-        inlinedef
-        #
-        beamer
-        csquotes
-        babel
-        ucs
-        pdftex
-        latexmk
-        #dependencies of lhs2TeX
-        stmaryrd
-        amsmath
-        cm-mf-extra-bold
-        metafont
-        ;
-  });
+      collection-latex
+      pgf
+      tikz-cd
+      forest
+      #undeclared forest deps:
+      pgfopts
+      etoolbox
+      environ
+      #undeclared environ deps:
+      trimspaces
+      #
+      l3packages #xparse
+      inlinedef
+      #
+      beamer
+      csquotes
+      babel
+      ucs
+      pdftex
+      latexmk
+      #dependencies of lhs2TeX
+      stmaryrd
+      amsmath
+      cm-mf-extra-bold
+      metafont
+      #
+      ulem
+      ;
+    });
 in
 pkgs.mkShell {
   buildInputs = [
