@@ -10,6 +10,8 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneKindSignatures #-}
+{-# LANGUAGE TypeOperators #-}
 
 
 module Uni where
@@ -17,11 +19,12 @@ import Prelude hiding ( length )
 import Data.Bool ( bool )
 import Data.Kind (Type)
 import Pres ((.>))
+import FunctorKit
 \end{code}
 %endif
 
 % for \eval{..}
-%options ghci -XGADTSyntax -XDeriveFunctor -XInstanceSigs -XTypeApplications -XLambdaCase -XScopedTypeVariables
+%options ghci -XGADTSyntax -XDeriveFunctor -XInstanceSigs -XTypeApplications -XLambdaCase -XTypeFamilies -XKindSignatures -XScopedTypeVariables -XStandaloneKindSignatures -XTypeOperators
 
 \section{Single Recursion}
 
@@ -247,7 +250,7 @@ expr lit plus = fold where
   \item \(\leadsto\) Introduce a little \sout{Anarchy}Category Theory
   \end{itemize}
 \end{frame}
-\subsection{Category Theory}
+\subsection{Theory}
 \begin{frame}
   \frametitle{Category}
   A category \(\mathcal{C}\) consists of collections \(\mathcal{C}_0\) of objects and \(\mathcal{C}_1\) of morphisms (or arrows) between them, with the following structure:
@@ -428,7 +431,72 @@ Initial Algebra: $(A,α)$ s.t. \(∀(B,ψ).\) \\
   We get a recursive definition for h: \(h=α^{-1};Fh;ψ\)
 \end{frame}
 \begin{frame}
-  We can phrase the business logic of the previously seen functions as such (using the transformation \(A^B\times A^C\sim A^{B+C}\)):
+  \frametitle{Back Again}
+  We will now return to the motivating problem and see how what we have just learned is applicable to its solution. In particular, we will see that:
+  \begin{itemize}
+  \item Our recursive datatypes correspond to fixpoints of associated \enquote{structural/base} functors, and are carriers of their initial algebras
+  \item The non-recursive business logic of the traversals, that is, the functions to replace the constructors, correspond to algebras for this functor
+  \item The morphism \(h\) we get given \((B,ψ)\) is the polytypic \emph{fold} we were looking for
+  \end{itemize}
+\end{frame}
+
+\subsection{Implementation}
+\begin{frame}
+  \frametitle{Functors in Haskell}
+  \begin{itemize}
+  \item Haskell can be seen as a category, where the objects are types and the arrows functions between them.
+  \item Endofunctors in Haskell can be implemented as type constructors (|* -> *|)
+  \item Definition on arrows |a -> b| via typeclass |Functor|, defining function |fmap|
+  \item \(F_1 (h: A\to B) : F_0A\to F_0B\quad\sim\quad\)|fmap @F (h :: A -> B) :: F A -> F B|
+  \end{itemize}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Structural Functors}
+  \begin{itemize}
+  \item We obtain the structural functors for our datatypes by factoring the recursion out of their definition, then adding it back in via a fixed-point operator.
+  \item We compare with how this can be done on the value level:
+  \end{itemize}
+  \small
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+\begin{code}
+type Endo a = a -> a
+--Recursive Definition:
+fac :: Endo Int
+fac n = n * fac (n-1)
+--Fixpoint operator:
+fix :: (a -> a) -> a
+fix f = f (fix f)
+--Factoring Fac:
+fac' :: Endo Int
+fac' = fix g where
+  g :: Endo Int -> Endo Int
+  g f n = n * f (n-1)
+\end{code}
+\end{column}
+\begin{column}{0.5\textwidth}
+  Recall our list datatype:
+\begin{spec}
+data List a :: * =
+  Nil | Cons a {-"\alert<2->{"-}(List a){-"}"-}
+\end{spec}
+\begin{code}
+--Fixpoint operator (typelevel)
+type Fix :: (* -> *) -> *
+newtype Fix f = In (f (Fix f))
+--Factoring List
+type List' a = Fix (ListF a)
+data ListF a l =
+  NilF | ConsF a {-"\alert<2->{"-}l{-"}"-}
+\end{code}
+\end{column}
+  \end{columns}
+\end{frame}
+\begin{frame}
+  \frametitle{Business Logic as Algebra}
+  We can store the functions meant to replace the constructors of a type as an algebra (using the transformation \(B^A\times B^C\sim B^{A+C}\)):
 \begin{code}
 type Algebra f a = f a -> a
 listBL :: b -> (a -> b -> b) -> Algebra (ListF a) b
@@ -438,27 +506,57 @@ listBL nil cons = \case
 \end{code}
 \end{frame}
 \begin{frame}
+  \frametitle{Defining a Functor instance}
+  \begin{itemize}
+  \item Do we have to manually define Functor instances?
+  \item Not if working with \emph{polynomial functors}
+  \item Recall the functor kit from theory
+  \end{itemize}
+  \small
+\begin{code}
+type ListF' a l = (K () :+: K a :×: I) l
+inG :: ListF a l -> ListF' a l
+inG = \case
+  NilF -> InL $ K ()
+  a `ConsF` l -> InR (K a :×: I l)
+outG :: ListF' a l -> ListF a l
+outG = \case
+  InL _ -> NilF
+  InR (K a :×: I l) -> a `ConsF` l
+instance Functor (ListF a) where
+  fmap f = inG .> fmap f .> outG
+\end{code}
+\end{frame}
+\begin{frame}
+  \frametitle{Generic/Polytypic Programming}
+  \begin{itemize}
+  \item |fmap| is a polytypic function
+  \item Our iso to the generic representation is still boilerplate, though
+  \item Some essentially polytypic functions derivable in Haskell, (e.g. |(==)|, via |deriving Eq|), |fmap| using |{-# LANGUAGE DeriveFunctor #-}|
+  \item Whole topic on its own
+  \end{itemize}
+\end{frame}
+\begin{frame}
+  \frametitle{Cigar!}
+  Recall the recursive definition \(h : A\to B=α^{-1};Fh;ψ\). To implement it, we only still lack \(α^{-1} : A\to FA\). Recall that a carrier of the initial algebra for functor |F| is |Fix F|. \eval{:t unFix} is easily defined:
+%if False
+\begin{code}
+unFix :: Fix f -> f (Fix f)
+\end{code}
+%endif
+\begin{code}
+unFix (In f) = f
+\end{code}
+\begin{itemize}
+  \item Finally, all parts are asembled for our polytypic \emph{fold} function!
+  \item Also called a \emph{catamorphism}, like \enquote{cataclysm}: Collapses a structure into a value (which of course can also again be a structure)
+  \end{itemize}
 \begin{code}
 cata :: Functor f => Algebra f b -> (Fix f) -> b
 cata ψ = unFix .> fmap (cata ψ) .> ψ
 \end{code}
 \end{frame}
-\begin{frame}
-  \frametitle{Structural Functors}
-\begin{code}
-data ListF c x = NilF | ConsF c x deriving Functor
-\end{code}
-\end{frame}
 
-\begin{frame}
-\frametitle{As Program}
-\begin{code}
-newtype Fix (f :: * -> *) :: * where
-  In :: f (Fix f) -> Fix f
-unFix :: Fix f -> f (Fix f)
-unFix (In f) = f
-\end{code}
-\end{frame}
 
 %%% Local Variables:
 %%% TeX-master: "Pres"
