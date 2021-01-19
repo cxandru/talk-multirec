@@ -258,13 +258,13 @@ expr lit plus = fold where
   \item Such that the following hold:
     \begin{itemize}
     \item Composition is associative, that is: \(f;(g;h) = (f;g);h\).
-    \item Composition satisfies unit laws: For every \(f:A\to B.\ id_A;f = f,\ f;id_B=f\).
+    \item Composition satisfies unit laws: For every \(f:A\to B.\ 1_A;f = f,\ f;1_B=f\).
     \end{itemize}
   \end{itemize}
 \end{frame}
 \begin{frame}
   \frametitle{Isomorphisms}
-  Given a category \(C\) and two objects \(A,B : \mathcal{C}_0\), we say \(A\) and \(B\) are isomorphic via \(f:A\to B\), if there exists a \(g:B\to A\) which is both a left- and right-inverse:
+  Given a category \(\mathcal{C}\) and two objects \(A,B : \mathcal{C}_0\), we say \(A\) and \(B\) are isomorphic via \(f:A\to B\), if there exists a \(g:B\to A\) which is both a left- and right-inverse:
   \[
     \begin{array}{ccc}
       \begin{tikzcd}[column sep=small, ampersand replacement=\&]
@@ -362,9 +362,9 @@ Initial Algebra: $(A,α)$ s.t. \(∀(B,ψ).\) \\
 \savebox{\final}{
   \begin{tikzcd}[ampersand replacement=\&]
     FA \arrow[d, "α"]\arrow[r, dashed, "Fh"]\arrow[rr, bend left, "F1_A"]
-    \& F(FA) \arrow[d, "Fα"] \arrow[r, "Fα"]\& FX\arrow[d,"α"]\\
+    \& F(FA) \arrow[d, "Fα"] \arrow[r, "Fα"]\& FA\arrow[d,"α"]\\
     A \arrow[r, dashed, "h"] \arrow[rr, bend right=26, "1_A"']
-    \& FA \arrow[r, "α"]\& X
+    \& FA \arrow[r, "α"]\& A
   \end{tikzcd}
 }
 % https://tex.stackexchange.com/questions/265884/print-size-of-box-to-latex-output
@@ -374,7 +374,7 @@ Initial Algebra: $(A,α)$ s.t. \(∀(B,ψ).\) \\
 \begin{frame}
   \frametitle{Lambek's Lemma}
   If \(F\) has an initial algebra \((A,α)\), then \(A\) is isomorphic to \(FA\) via \(α\).
-  Proof (We show only \(h;α = id_A\)): Consider the algebra \((FA,Fα)\):\\
+  Proof (We show only \(h;α = 1_A\)): Consider the algebra \((FA,Fα)\):\\
   \parbox[t][\the\wd\final][c]{\the\ht\final}{
     \only<1>{
       \begin{tikzcd}[ampersand replacement=\&]
@@ -393,26 +393,26 @@ Initial Algebra: $(A,α)$ s.t. \(∀(B,ψ).\) \\
     \only<3>{
       \begin{tikzcd}[ampersand replacement=\&]
         FA \arrow[d, "α"]\arrow[r, dashed, "Fh"]
-        \& F(FA) \arrow[d, "Fα"]\arrow[r, "Fα"]\& FX\arrow[d,"α"]\\
+        \& F(FA) \arrow[d, "Fα"]\arrow[r, "Fα"]\& FA\arrow[d,"α"]\\
         A \arrow[r, dashed, "h"]
-        \& FA \arrow[r, "α"]\& X
+        \& FA \arrow[r, "α"]\& A
       \end{tikzcd}
     }
     \only<4>{
       \begin{tikzcd}[ampersand replacement=\&]
         FA \arrow[d, "α"]\arrow[r, dashed, "Fh"]\arrow[rr, bend left, "F1_A"]
-        \& F(FA) \arrow[d, "Fα"] \arrow[r, "Fα"]\& FX\arrow[d,"α"]\\
+        \& F(FA) \arrow[d, "Fα"] \arrow[r, "Fα"]\& FA\arrow[d,"α"]\\
         A \arrow[r, dashed, "h"] \arrow[rr, bend right=26, "1_A"']
-        \& FA \arrow[r, "α"]\& X
+        \& FA \arrow[r, "α"]\& A
       \end{tikzcd}
     }
   }
 % Wish the below worked *sigh*:
 % \begin{tikzcd}[ampersand replacement=\&]
 %   FA \arrow[d, "α"]\arrow[r, dashed, "Fh"]\onslide<3->{\arrow[rr, bend left, "F1_A"]}
-%   \& F(FA) \arrow[d, "Fα"] \onslide<2->{\arrow[r, "Fα"]\& FX\arrow[d,"α"]}\\
+%   \& F(FA) \arrow[d, "Fα"] \onslide<2->{\arrow[r, "Fα"]\& FA\arrow[d,"α"]}\\
 %   A \arrow[r, dashed, "h"] \onslide<3->{\arrow[rr, bend right, "1_A"]}
-%   \& FA \onslide<2->{\arrow[r, "α"]\& X}
+%   \& FA \onslide<2->{\arrow[r, "α"]\& A}
 % \end{tikzcd}
 \end{frame}
 
