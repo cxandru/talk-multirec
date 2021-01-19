@@ -26,8 +26,7 @@
 % https://github.com/sergv/kievfprog-2017-november
 % use %if False %endif lhs2tex directives to ignore
 
-%include talk.fmt
-%include lhs2TeX.sty
+%include lhs2TeX.fmt
 
 \title[Structured Traversals for (M)RADTs]{Structured Traversals for (Multiply) Recursive Algebraic Datatypes}
 \author{G. Cassian Alexandru}

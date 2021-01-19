@@ -1,4 +1,4 @@
-%include talk.fmt
+%include lhs2TeX.fmt
 
 %if False
 \begin{code}
