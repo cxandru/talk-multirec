@@ -20,6 +20,7 @@
 \usepackage{tikz}
 \usetikzlibrary{cd}
 \usepackage[normalem]{ulem} %strikethrough
+\usepackage{hyperref}
 
 % Inspirations:
 % https://onthebalcony.wordpress.com/2008/05/16/haskell-lhs2tex-latex-beamer/
@@ -58,7 +59,7 @@ module Pres where
 
 \begin{frame}
   \titlepage
-  {\scriptsize \hspace{1cm}Presentation generated from \texttt{.lhs} sources using \texttt{lhs2TeX}}
+  {\scriptsize \hspace{1cm}Presentation generated from \texttt{.lhs} sources\footnote{\scriptsize \url{https://github.com/cxandru/talk-multirec}} using \href{https://hackage.haskell.org/package/lhs2tex}{\texttt{lhs2TeX}}}
 \end{frame}
 
 \begin{frame}
