@@ -33,6 +33,5 @@
 # hyperref
 *.brf
 
-# Ignore *.tex, *.hs, as they are generated from *.lhs sources
-*.hs
+# Ignore *.tex as they are generated from *.lhs sources
 *.tex
