@@ -53,6 +53,7 @@ mysymbol/.style={start anchor=center,end anchor=center,draw=none}
 module Pres where
 (.>) :: (a -> b) -> (b -> c) -> a -> c
 (.>) = flip (.)
+
 \end{code}
 %endif
 
@@ -86,4 +87,28 @@ foo = \case
 
 \include{Uni}
 \include{Poly}
+
+\section{Conclusion}
+\begin{frame}
+  \frametitle{Remarks}
+  \begin{itemize}
+  \item There are a wealth of topics in the main paper and related literature not broached in this talk
+  \item A small taste:
+    \begin{itemize}
+    \item \emph{unfolds}, producing datastructures, and more schemes
+    \item fusion laws derived from Category Theory
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Conclusion}
+  \begin{itemize}
+  \item using Category Theory, we were able to give a uniform implementation for a whole class of traversals
+  \item We generalized from single to mutual recursion, noting that we didn't need any additional categorical notions
+  \item Implementation details for mutual recursion are quite messy - boilerplate still exists, but ergonomics \& reach of recursion schemes have been increasing since their theoretical beginnings.
+  \item If you know anyone who would like to supervise a research internship in this area, I'm looking.
+  \end{itemize}
+\end{frame}
+
 \end{document}

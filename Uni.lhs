@@ -16,8 +16,6 @@
 
 module Uni where
 import Prelude hiding ( length )
-import Data.Bool ( bool )
-import Data.Kind (Type)
 import Pres ((.>))
 import FunctorKit
 \end{code}
