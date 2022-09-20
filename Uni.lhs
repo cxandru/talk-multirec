@@ -138,8 +138,8 @@ g p x xs =
 \begin{frame}[t]
   \frametitle{Example Evaluation of |filter even|}
 \begin{spec}
-g p x xs =
-  (if p x then [x] else []) ++ xs
+g even x xs =
+  (if even x then [x] else []) ++ xs
 \end{spec}
   \only<1>{\begin{forest}
     ADT,
@@ -199,7 +199,7 @@ g p x xs =
 \end{frame}
 \begin{frame}
   \frametitle{Insight}
- Even though the functions were defined recursively, their behaviour can be understood non-recursively as simply replacing the two constructors for |[a]| by functions of the same arity.
+ Even though the functions were defined recursively, their behaviour can be understood non-recursively as simply replacing the two constructors of the datatype |[a]| by functions of the same arity.
 \end{frame}
 \begin{frame}
 \only<1>{
@@ -433,8 +433,8 @@ Initial Algebra: $(A,α)$ s.t. \(∀(B,ψ).\) \\
   We will now return to the motivating problem and see how what we have just learned is applicable to its solution. In particular, we will see that:
   \begin{itemize}
   \item Our recursive datatypes correspond to fixpoints of associated \enquote{structural/base} functors, and are carriers of their initial algebras
-  \item The non-recursive business logic of the traversals, that is, the functions to replace the constructors, correspond to algebras for this functor
-  \item The morphism \(h\) we get given \((B,ψ)\) is the polytypic \emph{fold} we were looking for
+  \item The non-recursive business logic of the traversals, that is, the functions to replace the constructors, correspond to algebras over this functor
+  \item The unique morphism \(h\) we get, given \((B,ψ)\), is the polytypic \emph{fold} we were looking for
   \end{itemize}
 \end{frame}
 
