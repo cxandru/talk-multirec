@@ -1,4 +1,4 @@
-default: talk.pdf
+default: Pres.pdf
 
 Pres.tex : Uni.tex Poly.tex
 
