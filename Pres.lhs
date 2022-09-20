@@ -29,8 +29,8 @@
 
 %include lhs2TeX.fmt
 
-\title[Structured Traversals for (M)RADTs]{Structured Traversals for (Multiply) Recursive Algebraic Datatypes}
-\author{G. Cassian Alexandru}
+\title[Structured Traversals for (M)RADTs]{Structured Traversals for (Mutually) Recursive Algebraic Datatypes}
+\author{Cass Alexandru}
 \date{\today}
 \begin{document}
 
@@ -68,7 +68,7 @@ module Pres where
   \item Language: Haskell, with numerous language extensions
   \item Syntactic (e.g. \texttt{LambdaCase})
   \item Clarifying (e.g. \texttt{TypeApplications, InstanceSigs})
-  \item Limited Dependent programming (e.g. \texttt{DataKinds}), for multiple recursion
+  \item Limited dependent types (e.g. \texttt{DataKinds}), for mutual recursion
   \end{itemize}
   \pause
 \begin{spec}
