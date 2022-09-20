@@ -45,7 +45,7 @@ filter p = go where
 \onslide<3->
 \begin{itemize}
 \item List Design pattern?
-\item Design Patterns are a poor man's abstraction
+\item Design Patterns are a poor person's abstraction
 \item Recognize common structure \& find correct abstract notion
 \end{itemize}
 \end{frame}
