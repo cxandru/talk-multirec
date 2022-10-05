@@ -18,7 +18,9 @@
 %\usepackage{fancyvrb}
 \usepackage{forest}
 \usepackage{tikz}
+\usepackage{xcolor}
 \usetikzlibrary{cd}
+\usepackage[absolute,overlay]{textpos}
 \usepackage[normalem]{ulem} %strikethrough
 \usepackage{hyperref}
 
@@ -67,8 +69,8 @@ module Pres where
   \begin{itemize}
   \item Language: Haskell, with numerous language extensions
   \item Syntactic (e.g. \texttt{LambdaCase})
-  \item Clarifying (e.g. \texttt{TypeApplications, InstanceSigs})
-  \item Limited dependent types (e.g. \texttt{DataKinds}), for mutual recursion
+  \item Clarifying (e.g. \texttt{TypeApplications, KindSignatures})
+  \item Limited dependent types \& type-level programming (e.g. \texttt{DataKinds}), for mutual recursion
   \end{itemize}
   \pause
 \begin{spec}
@@ -107,7 +109,6 @@ foo = \case
   \item using Category Theory, we were able to give a uniform implementation for a whole class of traversals
   \item We generalized from single to mutual recursion, noting that we didn't need any additional categorical notions
   \item Implementation details for mutual recursion are quite messy - boilerplate still exists, but ergonomics \& reach of recursion schemes have been increasing since their theoretical beginnings.
-  \item If you know anyone who would like to supervise a research internship in this area, I'm looking.
   \end{itemize}
 \end{frame}
 

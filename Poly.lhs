@@ -2,20 +2,14 @@
 
 %if False
 \begin{code}
-{-# LANGUAGE GADTSyntax #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneKindSignatures #-}
-{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE ExplicitForAll #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE PatternSynonyms #-}
 
@@ -79,7 +73,7 @@ bar = let (even, odd) = (
 \subsection{Theory}
 \begin{frame}
   \frametitle{Product category}
-  For two categories \(\mathcal{C}\) and \(\mathcal{D}\), the \emph{product category} \(C\times D\) is constituted of the following:
+  For two categories \(\mathcal{C}\) and \(\mathcal{D}\), the \emph{product category} \(C\times D\) consists of the following:
   \begin{itemize}
   \item as objects pairs \((C,D)\), \(C:\mathcal{C}_0\), \(D:\mathcal{D}_0\)
   \item as morphisms pairs \((f:X\to Y, g:A\to B)\), \(f:\mathcal{C}_1\), \(g:\mathcal{D}_1\), such that composition is defined componentwise
@@ -89,7 +83,7 @@ bar = let (even, odd) = (
 \subsection{Implementation}
 \begin{frame}
   \frametitle{Functors}
-  In Haskell |Functor| represents endofunctors, so we cannot encode the product category. We can write some pseudocode though, for how our structural functor ought to look:
+  In Haskell |Functor| represents functors in \texttt{Hask}, so we cannot use it for functors in the product category \texttt{Hask}\(\times\)\texttt{Hask}. We can write some pseudocode though, for how our structural functor ought to look:
 \begin{spec}
 data ExprF (e,d) = (
    Lit Int | Var Char | Plus e e | LetIn d e
@@ -103,7 +97,7 @@ What we need is another way to represent tuples. A preliminary observation is th
   \frametitle{Remodeling}
 \only<1>{The functor for our example family has kind |(2 -> *) -> (2 -> *)|. First we should define this kind |2|.
 
-  We can define define an Enum with two accesors for our expr/decl family, and use it as a kind (lifting its constructors to singleton types), using the GHC extension \texttt{DataKinds}
+  We can define define an Enum with two accessors for our expr/decl family, and use it as a kind (lifting its constructors to singleton types), using the GHC extension \texttt{DataKinds}
 }
 \only<2->{
 \begin{code}
@@ -117,14 +111,14 @@ data instance ASTF1 c D =
 \end{code}
 \onslide<3->{
   \alt<4>{The two instances define the the component of the structural functor\footnote{Actually, for technical reasons you need to write a GADT. I used type family syntax here since I believe it makes it clearer what is going on} for |Expr| and |Decl| respectively. The tags on the rhs are used to access the components of |c|. If | c ≅ (e,d)|, then |c E = e|, |c D = d|.}
-  {The type can be read as \enquote{given a table of types to be used in the recursive positions of Expr and Decl, respectively, return a table, where at tag E you find the configured Expr type, at D Decl}.}
+  {The type of |ASTF1| can be read as \enquote{given a table of types to be used in the recursive positions of Expr and Decl, respectively, return a table, where at tag E you find the configured Expr type, at D Decl}.}
 }
 }
 \end{frame}
 \begin{frame}
   \frametitle{IFunctor}
   We will need a new typeclass, |IFunctor| (standing for \emph{indexed functor}), for functors of the discussed shape. What is the type of morphisms in |(k -> *)|?
-  We saw that in the product category, morphisms were of the form \((f,g)\). In generalizing, we are looking at a collection of maps of the form:\\
+  We saw that in the product category, morphisms were of the form \((f,g)\). Generalizing, we are looking at a collection of maps of the form:\\
 \begin{tikzcd}[column sep=small, ampersand replacement=\&]
   A_1 \arrow[d, "f_1"] \& A_2 \arrow[d, "f_2"] \& \cdots \& A_k\arrow[d, "f_k"]\\
   A'_1 \& A'_2 \& \cdots \& A'_k
@@ -139,7 +133,7 @@ class IFunctor (f :: (k -> *) -> (k -> *)) where
   Nothing very fancy happens here. Both result in a family and are defined pointwise via |ix ::k|.
 \begin{code}
 type IFix :: ((k -> *) -> (k -> *)) -> (k -> *)
-data IFix f (ix :: k) =
+newtype IFix f (ix :: k) =
   IIn (f (IFix f) ix)
 
 iUnFix :: IFix f ix -> f (IFix f) ix
@@ -185,14 +179,14 @@ instance IFunctor ASTF2 where
     Seq2 l r -> Seq2 (f @D l) (f @D r)
 
 prettyPrint :: forall (ix :: Tag). Algebra ASTF2 (Const String) ix
-prettyPrint = \case
-  Lit2 i -> Const (show i)
-  Var2 v -> Const [v]
-  Plus2 (Const l) (Const r) -> Const $ l ++ " + " ++ r
-  LetIn2 (Const d) (Const e) -> Const $ "let\n" ++ d ++ "in " ++ e
+prettyPrint = Const . \case
+  Lit2 i -> show i
+  Var2 v -> [v]
+  Plus2 (Const l) (Const r) -> l ++ " + " ++ r
+  LetIn2 (Const d) (Const e) -> "let\n" ++ d ++ "in " ++ e
 
-  Bind2 c (Const e) -> Const $ c:" := " ++ e ++ "\n"
-  Seq2 (Const l) (Const r) -> Const $ l ++ r
+  Bind2 c (Const e) -> c:" := " ++ e ++ "\n"
+  Seq2 (Const l) (Const r) -> l ++ r
 
 pattern Lit' i = (IIn (Lit2 i))
 pattern Var' v = (IIn (Var2 v))
@@ -209,8 +203,6 @@ e2 = LetIn'
   )  (Var' 'x') `Plus'` (Var' 'y')
 \end{code}
 %endif
-
-
 
 %%% Local Variables:
 %%% TeX-master: "Pres"

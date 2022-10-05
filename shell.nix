@@ -1,4 +1,4 @@
-{ pkgs ? import (fetchTarball https://github.com/NixOS/nixpkgs/archive/6f0c00907bbd.tar.gz) {} }:
+{ pkgs ? import (fetchTarball https://github.com/NixOS/nixpkgs/archive/f677051b8dc0b5e2a9348941c99eea8c4b0ff28f.tar.gz) {} }:
 
 with pkgs;
 
@@ -8,6 +8,7 @@ let
       collection-latex
       pgf
       tikz-cd
+      textpos
       forest
       #undeclared forest deps:
       pgfopts
@@ -40,6 +41,7 @@ pkgs.mkShell {
       texEnv
       haskellPackages.lhs2tex
       ghc
+      haskell-language-server
       gnumake
   ];
 }

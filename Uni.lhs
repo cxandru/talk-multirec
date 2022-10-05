@@ -7,8 +7,6 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE ExplicitForAll #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneKindSignatures #-}
 {-# LANGUAGE TypeOperators #-}
@@ -58,7 +56,7 @@ filter p = go where
   },
 }
 
-\begin{frame}
+\begin{frame}{Functions replace constructors}
   \begin{columns}[t]
     \begin{column}{0.2\textwidth}
       List\\
@@ -211,17 +209,21 @@ data List a = Nil | Cons a (List a)
   GADT Syntax:
 \begin{code}
 data List a where
-  Nil :: List a
-  Cons :: a -> (List a) -> (List a)
+  Nil :: {-"\alert<4>{"-}List a{-"}"-}
+  Cons :: a -> {-"\alert<4>{"-}(List a){-"}"-} -> {-"\alert<4>{"-}(List a){-"}"-}
 \end{code}
 \onslide<3->{
 \begin{code}
-list :: b -> (a -> b -> b) -> List a -> b
-list {-"\alert<4->{"-}nil cons{-"}"-} = fold where
-  {-"\alert<4->{"-}fold Nil{-"}"-} = nil
-  {-"\alert<4->{"-}fold (x `Cons` xs){-"}"-} = x `cons` {-"\alert<4->{"-}fold xs{-"}"-}
-
+list :: {-"\alert<4>{"-}b{-"}"-} -> (a -> {-"\alert<4>{"-}b{-"}"-} -> {-"\alert<4>{"-}b{-"}"-}) -> List a -> {-"\alert<4>{"-}b{-"}"-}
+list {-"\alert<5->{"-}nil cons{-"}"-} = fold where
+  {-"\alert<5->{"-}fold Nil{-"}"-} = nil
+  {-"\alert<5->{"-}fold (x `Cons` xs){-"}"-} = x `cons` {-"\alert<5->{"-}fold xs{-"}"-}
+\end{code}
+}
+\onslide<6->{
+\begin{code}
 length' = list 0 (\_ n -> 1+n)
+
 filter' p = list []
   (\x xs -> (if p x then [x] else []) ++ xs)
 \end{code}
@@ -258,7 +260,7 @@ expr lit plus = fold where
   \item Such that the following hold:
     \begin{itemize}
     \item Composition is associative, that is: \(f;(g;h) = (f;g);h\).
-    \item Composition satisfies unit laws: For every \(f:A\to B.\ 1_A;f = f,\ f;1_B=f\).
+    \item Composition satisfies unit laws: For every \(f:A\to B.\quad 1_A;f = f,\ f;1_B=f\).
     \end{itemize}
   \end{itemize}
 \end{frame}
@@ -326,7 +328,7 @@ When \(\mathcal{C}=\mathcal{D}\), we say \(F\) is an \emph{Endofunctor}.
 \newcommand{\Alg}[3]{\ensuremath{{#1}{#2}\xrightarrow{{#3}} {#1}}}
 \begin{frame}
   \frametitle{Algebra}
-  Let \(F:\mathcal{C}\to\mathcal{C}\) be an endofunctor \(A: \mathcal{C}\), \(φ: FA\to A\). Then \(FA \xrightarrow{φ} A\) (or \((A,φ)\)) is an \emph{Algebra}, and \(A\) its \emph{Carrier}.
+  Let \(F:\mathcal{C}\to\mathcal{C}\) be an endofunctor \(A: \mathcal{C}\), \(φ: FA\to A\). Then \(FA \xrightarrow{φ} A\) (or \((A,φ)\)) is an \emph{F-Algebra}, and \(A\) its \emph{Carrier}.
 \vspace{1ex}
 \begin{columns}
 \begin{column}{0.2\textwidth}
@@ -445,64 +447,96 @@ Initial Algebra: $(A,α)$ s.t. \(∀(B,ψ).\) \\
   \item Haskell can be seen as a category, where the objects are types and the arrows functions between them.
   \item Endofunctors in Haskell can be implemented as type constructors (|* -> *|)
   \item Definition on arrows |a -> b| via typeclass |Functor|, defining function |fmap|
-  \item \(F_1 (h: A\to B) : F_0A\to F_0B\quad\sim\quad\)|fmap @F (h :: A -> B) :: F A -> F B|
+  \item \(F_1 (h: A\to B) : F_0A\to F_0B\quad\sim\quad\)|fmap @f (h :: a -> b) :: f a -> f b|
   \end{itemize}
 \end{frame}
 
 
+\newcommand<>{\NormalBox}[2][]{%
+  \only#3{\tikz[#1, every node/.style={shape=rectangle,draw,fill=white, #1}]\node []{#2};}
+}
+\newcommand<>{\Warnung}[4][0pt]{%
+  {\only#5{\begin{textblock*}{#1}#2%
+      \NormalBox[fill=red!30,draw=black!30,rounded corners=7pt,opacity=0.95]{
+      \begin{minipage}{#3}
+        #4
+      \end{minipage}}
+    \end{textblock*}}}%
+}
 \begin{frame}
   \frametitle{Structural Functors}
   \begin{itemize}
   \item We obtain the structural functors for our datatypes by factoring the recursion out of their definition, then adding it back in via a fixed-point operator.
   \item We compare with how this can be done on the value level:
   \end{itemize}
-  \small
+  \scriptsize
   \begin{columns}
-    \begin{column}{0.5\textwidth}
+    \begin{column}{0.4\textwidth}
 \begin{code}
-type Endo a = a -> a
+type ℤ = Int
 --Recursive Definition:
-fac :: Endo Int
-fac n = n * fac (n-1)
+fac :: ℤ -> ℤ
+fac = \case
+  0 -> 1
+  n -> n * fac (n-1)
 --Fixpoint operator:
-fix :: (a -> a) -> a
+fix :: forall a. (a -> a) -> a
 fix f = f (fix f)
---Factoring Fac:
-fac' :: Endo Int
-fac' = fix g where
-  g :: Endo Int -> Endo Int
-  g f n = n * f (n-1)
+--Factoring fac:
+fac' = fix @(ℤ -> ℤ) facF where
+  facF :: (ℤ -> ℤ) -> (ℤ -> ℤ)
+  facF rec n = n * rec (n-1)
 \end{code}
 \end{column}
-\begin{column}{0.5\textwidth}
-  Recall our list datatype:
+\begin{column}{0.6\textwidth}
+  \Warnung<2>{(1.5cm,4cm)}{10cm}{
+    This encoding of typelevel recursion is quite close to term-level recursion. \emph{However}, we have to deal with much more type-level programming and this approach deviates from that of the original version of this talk, and the author did not have enough time to explore it in full.
+  }
+{\color{gray}
 \begin{spec}
-data List a :: * =
-  Nil | Cons a {-"\alert<2->{"-}(List a){-"}"-}
+--Recursive Definition:
+type List :: * -> *
+data List a where
+  Nil :: List a
+  Cons :: a -> (List a) -> (List a)
 \end{spec}
+}
+\only<1-2>{
 \begin{code}
 --Fixpoint operator (typelevel)
-data family Fix (f :: k -> k) :: k
-newtype instance Fix f = In (f (Fix f))
-newtype instance Fix f ix = IIn (f (Fix f) ix)
+data family Fix' (f :: k -> k) :: k
+newtype instance Fix' f = In' (f (Fix' f))
+newtype instance Fix' f ix = IIn (f (Fix' f) ix)
 --Factoring List
-type List :: * -> *
-type List' = Fix @(* -> *) ListF
-type ListF :: (* -> *) -> * -> *
-data ListF rec a =
-  NilF | ConsF a {-"\alert<2>{"-}(rec a){-"}"-}
+type List'' = Fix' @(* -> *) ListF'
+type ListF' :: (* -> *) -> * -> *
+data ListF' rec a = NilF' | ConsF' a (rec a)
 \end{code}
+}
+\only<3>{
+\begin{code}
+--Fixpoint operator (typelevel)
+type Fix :: (* -> *) -> *
+newtype Fix f = In (f (Fix f))
+--Factoring List
+type List' a = Fix (ListF a)
+data ListF a l =
+  NilF | ConsF a l
+\end{code}
+}
 \end{column}
   \end{columns}
 \end{frame}
 \begin{frame}
   \frametitle{Business Logic as Algebra}
-  We can store the functions meant to replace the constructors of a type as an algebra (using the transformation \(B^A\times B^C\sim B^{A+C}\)):
+  So far we've been passing the functions meant to replace the constructors of a type as separate arguments to the fold for each type. Via uncurrying we can pass those functions as a tuple.\pause
+
+  We can transform a tuple of functions meant to replace the constructors of a type as an \emph{algebra} using the transformation \(B^A\times B^C\sim B^{A+C}\).\pause
+
+  The exponential \(B^A\) is the function type \(A\to B\), and if \(A,C\) are constructors, then the type itself is the sum of its constructors (\(A+C\)).\pause
 \begin{code}
 type Algebra f a = f a -> a
-data family Flip (f :: a -> b -> k) :: (b -> a -> k)
-newtype instance Flip f b a = Flipped (f a b)
-listBL :: forall (a :: * -> *) b r. b -> (r -> b -> b) -> Algebra (Flip ListF a) b
+listBL :: b -> (a -> b -> b) -> Algebra (ListF a) b
 listBL nil cons = \case
   NilF -> nil
   x `ConsF` b -> x `cons` b
@@ -517,12 +551,12 @@ listBL nil cons = \case
   \end{itemize}
   \small
 \begin{code}
-type ListF' a l = (K () :+: K a :×: I) l
-inG :: ListF a l -> ListF' a l
+type ListFG a l = (K () :+: K a :×: I) l
+inG :: ListF a l -> ListFG a l
 inG = \case
   NilF -> InL $ K ()
   a `ConsF` l -> InR (K a :×: I l)
-outG :: ListF' a l -> ListF a l
+outG :: ListFG a l -> ListF a l
 outG = \case
   InL _ -> NilF
   InR (K a :×: I l) -> a `ConsF` l
@@ -551,7 +585,7 @@ unFix :: Fix f -> f (Fix f)
 unFix (In f) = f
 \end{code}
 \begin{itemize}
-  \item Finally, all parts are asembled for our polytypic \emph{fold} function!
+  \item Finally, all parts are assembled for our polytypic \emph{fold} function!
   \item Also called a \emph{catamorphism}, like \enquote{cataclysm}: Collapses a structure into a value (which of course can also again be a structure)
   \end{itemize}
 \begin{code}
