@@ -3,12 +3,12 @@
 %if False
 \begin{code}
 {-# LANGUAGE GADTSyntax #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE ExplicitForAll #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneKindSignatures #-}
 {-# LANGUAGE TypeOperators #-}
@@ -482,12 +482,15 @@ data List a :: * =
 \end{spec}
 \begin{code}
 --Fixpoint operator (typelevel)
-type Fix :: (* -> *) -> *
-newtype Fix f = In (f (Fix f))
+data family Fix (f :: k -> k) :: k
+newtype instance Fix f = In (f (Fix f))
+newtype instance Fix f ix = IIn (f (Fix f) ix)
 --Factoring List
-type List' a = Fix (ListF a)
-data ListF a l =
-  NilF | ConsF a {-"\alert<2->{"-}l{-"}"-}
+type List :: * -> *
+type List' = Fix @(* -> *) ListF
+type ListF :: (* -> *) -> * -> *
+data ListF rec a =
+  NilF | ConsF a {-"\alert<2>{"-}(rec a){-"}"-}
 \end{code}
 \end{column}
   \end{columns}
@@ -497,7 +500,9 @@ data ListF a l =
   We can store the functions meant to replace the constructors of a type as an algebra (using the transformation \(B^A\times B^C\sim B^{A+C}\)):
 \begin{code}
 type Algebra f a = f a -> a
-listBL :: b -> (a -> b -> b) -> Algebra (ListF a) b
+data family Flip (f :: a -> b -> k) :: (b -> a -> k)
+newtype instance Flip f b a = Flipped (f a b)
+listBL :: forall (a :: * -> *) b r. b -> (r -> b -> b) -> Algebra (Flip ListF a) b
 listBL nil cons = \case
   NilF -> nil
   x `ConsF` b -> x `cons` b
